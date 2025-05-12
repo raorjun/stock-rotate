@@ -2,9 +2,6 @@ import numpy as np
 import pandas as pd
 
 class PortfolioEvaluator:
-    """
-    Performance metrics for strategy returns.
-    """
     def __init__(self, returns: pd.Series):
         self.returns = returns
 

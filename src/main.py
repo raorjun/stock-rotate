@@ -10,7 +10,6 @@ from evaluator import PortfolioEvaluator
 
 
 def main():
-    # Resolve data path
     SRC_DIR = Path(__file__).resolve().parent
     ROOT_DIR = SRC_DIR.parent
     DATA_PATH = ROOT_DIR / 'data' / 'sp500_clean_data.csv'
@@ -19,18 +18,15 @@ def main():
     if not DATA_PATH.exists():
         raise FileNotFoundError(f"Data file not found: {DATA_PATH}")
 
-    # Load and preprocess
     df = pd.read_csv(DATA_PATH, index_col=0, parse_dates=True)
     daily_returns = df.pct_change().dropna()
     X = daily_returns.T.values
 
-    # PCA & clustering
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X)
     sc = SpectralClustering(n_clusters=5, n_neighbors=10)
     labels = sc.fit_predict(X)
 
-    # Plot clusters
     plt.figure()
     for lbl in np.unique(labels):
         pts = X_pca[labels == lbl]
@@ -42,21 +38,16 @@ def main():
     plt.show()
 
     strategy = PortfolioStrategy(daily_returns, labels)
-    # Ask user for lookback window
     lookback = int(input("Enter lookback window (months): "))
     clusters = strategy._cluster_map()
     monthly = strategy.compute_monthly_returns()
 
-    # pick the trailing lookback window
     window = monthly.index[-lookback:]
 
-    # compute scalar average per cluster
     perf = {}
     for lbl, tickers in clusters.items():
         block = monthly.loc[window, tickers]
-        perf[lbl] = block.values.mean()  # <- flatten & mean
-
-    # now this works without ValueError
+        perf[lbl] = block.values.mean()
     best = max(perf, key=perf.get)
     print(f"\nBest cluster over the past {lookback} months: Cluster {best}")
     print(f"Average return: {perf[best]:.4f}")
